@@ -1,20 +1,37 @@
 import { createRouter, createWebHistory } from "vue-router";
 import HomeView from "../views/HomeView.vue";
+import LoginView from "@/views/LoginView.vue";
+import MarketBuySell from "@/components/MarketBuySell.vue";
 
 const routes = [
   {
     path: "/",
-    name: "home",
-    component: HomeView,
+    name: "Login",
+    component: LoginView,
   },
   {
-    path: "/about",
-    name: "about",
-    // route level code-splitting
-    // this generates a separate chunk (about.[hash].js) for this route
-    // which is lazy-loaded when the route is visited.
-    component: () =>
-      import(/* webpackChunkName: "about" */ "../views/AboutView.vue"),
+    path: "/dashboard",
+    name: "home",
+    component: HomeView,
+    beforeEnter: (to, from, next) => {
+      if (!localStorage.getItem("username")) {
+        next("/");
+      } else {
+        next();
+      }
+    },
+  },
+  {
+    path: "/market/:crypto",
+    name: "MarketBuySell",
+    component: MarketBuySell,
+    beforeEnter: (to, from, next) => {
+      if (!localStorage.getItem("username")) {
+        next("/"); // Redirige al login si no hay usuario autenticado
+      } else {
+        next();
+      }
+    },
   },
 ];
 
