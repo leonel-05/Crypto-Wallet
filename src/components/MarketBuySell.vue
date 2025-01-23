@@ -1,9 +1,8 @@
 <template>
-  <div class="crypto-trade">
+  <div class="crypto-market">
     <h1>Compra y Venta de Criptomonedas</h1>
-
-    <!-- Botones para seleccionar el tipo de transacción -->
-    <div class="trade-type">
+    <!--botones para seleccionar tipo de transacción. Se inicializa en compra-->
+    <div class="market-type">
       <button
         @click="establecerTipoTransaccion('purchase')"
         :class="{ active: transaction.action === 'purchase' }"
@@ -17,62 +16,65 @@
         Vender
       </button>
     </div>
+    <!--Form para la transacción, la crypto se inicializa con la elegida en el HomeDashboard-->
+    <form @submit.prevent="enviarTransaccion" class="transaction-form">
+      <div class="form-group">
+        <label for="crypto">Criptomoneda:</label>
+        <div class="crypto-selector">
+          <select
+            id="crypto"
+            v-model="transaction.cripto_code"
+            @change="obtenerPrecioActual"
+            required
+          >
+            <option disabled value="">Selecciona una opción</option>
+            <option value="btc">Bitcoin (BTC)</option>
+            <option value="eth">Ethereum (ETH)</option>
+            <option value="ltc">Litecoin (LTC)</option>
+          </select>
 
-    <!-- Formulario para transacciones -->
-    <form @submit.prevent="enviarTransaccion">
-      <label for="crypto">Criptomoneda:</label>
-      <div class="crypto-selector">
-        <select
-          id="crypto"
-          v-model="transaction.cripto_code"
-          @change="obtenerPrecioActual"
-          required
-        >
-          <option disabled value="">Selecciona una opción</option>
-          <option value="btc">Bitcoin (BTC)</option>
-          <option value="eth">Ethereum (ETH)</option>
-          <option value="ltc">Litecoin (LTC)</option>
-        </select>
-
-        <img
-          :src="obtenerLogoCripto(transaction.cripto_code)"
-          v-if="transaction.cripto_code"
-          alt="Logo de la criptomoneda"
-          class="crypto-logo"
+          <img
+            :src="obtenerLogoCripto(transaction.cripto_code)"
+            v-if="transaction.cripto_code"
+            alt="Logo de la criptomoneda"
+            class="crypto-logo"
+          />
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="crypto-amount">Cantidad:</label>
+        <input
+          id="crypto-amount"
+          type="number"
+          step="0.00001"
+          v-model="transaction.crypto_amount"
+          @input="actualizarMonto"
+          placeholder="Cantidad de criptomonedas"
         />
       </div>
 
-      <label for="crypto-amount">Cantidad:</label>
-      <input
-        id="crypto-amount"
-        type="number"
-        step="0.00001"
-        v-model="transaction.crypto_amount"
-        @input="actualizarMonto"
-        placeholder="Cantidad de criptomonedas"
-      />
-
-      <p v-if="precioActual">
+      <p v-if="precioActual" class="price-info">
         Precio actual:
         <strong>{{ precioActual.toLocaleString() }} ARS</strong>
         por {{ transaction.cripto_code.toUpperCase() }}
       </p>
 
-      <p>
+      <p class="total-info">
         Total {{ transaction.action === "purchase" ? "a Pagar" : "a Recibir" }}:
         <strong>
           {{ transaction.money ? transaction.money.toLocaleString() : 0 }} ARS
         </strong>
       </p>
+      <div class="form-group">
+        <label for="datetime">Fecha y Hora:</label>
+        <input
+          id="datetime"
+          type="datetime-local"
+          v-model="transaction.datetime"
+        />
+      </div>
 
-      <label for="datetime">Fecha y Hora:</label>
-      <input
-        id="datetime"
-        type="datetime-local"
-        v-model="transaction.datetime"
-      />
-
-      <button type="submit">
+      <button type="submit" class="btn-submit">
         {{
           transaction.action === "purchase"
             ? "Registrar Compra"
@@ -93,7 +95,7 @@ export default {
     return {
       transaction: {
         user_id: "",
-        action: "purchase", // Por defecto, siempre inicializado como "Comprar"
+        action: "purchase",
         cripto_code: "",
         crypto_amount: 0,
         money: "",
@@ -109,17 +111,17 @@ export default {
   },
   methods: {
     establecerTipoTransaccion(tipo) {
-      this.transaction.action = tipo; // Cambiar entre Comprar y Vender
+      this.transaction.action = tipo;
     },
     comprobarUsuario() {
       const userId = localStorage.getItem("username");
       this.transaction.user_id = userId;
     },
     inicializarCriptoDesdeRuta() {
-      const cripto = this.$route.params.crypto; // Leer el parámetro de la ruta
+      const cripto = this.$route.params.crypto;
       if (cripto) {
-        this.transaction.cripto_code = cripto; // Inicializar con la criptomoneda seleccionada
-        this.obtenerPrecioActual(); // Cargar el precio actual de la criptomoneda
+        this.transaction.cripto_code = cripto;
+        this.obtenerPrecioActual();
       }
     },
     async obtenerPrecioActual() {
@@ -210,25 +212,74 @@ export default {
 </script>
 
 <style scoped>
-.crypto-trade {
-  max-width: 600px;
-  margin: auto;
+.crypto-market {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   text-align: center;
+  padding: 20px;
+  background: linear-gradient(to bottom right, #283c86, #45a247);
+  min-height: 100vh;
+  color: #fff;
+}
+.market-type {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 .crypto-logo {
   width: 50px;
+  height: 50px;
   margin-left: 10px;
   vertical-align: middle;
 }
 .message {
-  color: green;
+  color: red;
   margin-top: 20px;
 }
-.trade-type button {
-  margin: 5px;
+.market-type button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #eee;
+  color: #333;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
 }
-.trade-type .active {
+.market-type button.active {
+  background-color: #45a247;
+  color: #fff;
   font-weight: bold;
-  text-decoration: underline;
+}
+.transaction-form {
+  background-color: rgba(255, 255, 255, 0.9);
+  padding: 20px;
+  border-radius: 10px;
+  max-width: 500px;
+  width: 100%;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.form-group {
+  margin-bottom: 15px;
+  color: #333;
+}
+.price-info,
+.total-info {
+  margin: 10px 0;
+  font-size: 1.1em;
+  color: #333;
+}
+.btn-submit {
+  background-color: #45a247;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.btn-submit:hover {
+  background-color: #399f38;
 }
 </style>
