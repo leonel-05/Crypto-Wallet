@@ -222,6 +222,9 @@ export default {
   min-height: 100vh;
   color: #fff;
 }
+.crypto-market h1 {
+  margin-top: 140px;
+}
 .market-type {
   display: flex;
   gap: 20px;

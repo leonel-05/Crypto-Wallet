@@ -112,3 +112,82 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.transaction-history {
+  padding: 20px;
+  background: linear-gradient(to bottom right, #283c86, #45a247);
+  color: #fff;
+  min-height: 100vh;
+}
+
+h2 {
+  text-align: center;
+  margin-bottom: 20px;
+  margin-top: 140px;
+}
+
+.loading {
+  text-align: center;
+  font-size: 1.2em;
+}
+
+.no-transactions {
+  text-align: center;
+  font-size: 1.1em;
+  color: #f5f5f5;
+  margin-top: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 20px 0;
+  background-color: #fff;
+  color: #333;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+thead {
+  background-color: #121316;
+  color: #fff;
+}
+
+th,
+td {
+  padding: 10px;
+  text-align: center;
+  border: 1px solid #ddd;
+}
+
+tbody tr:nth-child(even) {
+  background-color: #f2f2f2;
+}
+
+.btn-edit {
+  background-color: #45a247;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-delete {
+  background-color: #d9534f;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.btn-edit:hover {
+  background-color: #399f38;
+}
+
+.btn-delete:hover {
+  background-color: #c9302c;
+}
+</style>
