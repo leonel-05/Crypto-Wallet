@@ -5,6 +5,7 @@ import HistoryActionsView from "@/views/HistoryActionsView.vue";
 import MarketBuySell from "@/components/MarketBuySell.vue";
 import MarketBuySellView from "@/views/MarketBuySellView.vue";
 import EditTransaction from "@/components/EditTransaction.vue";
+import CurrentStatusView from "@/views/CurrentStatusView.vue";
 
 const routes = [
   {
@@ -65,6 +66,18 @@ const routes = [
     name: "EditarTransaccion",
     component: EditTransaction,
     props: true,
+  },
+  {
+    path: "/Current-State",
+    name: "CurrentState",
+    component: CurrentStatusView,
+    beforeEnter: (to, from, next) => {
+      if (!localStorage.getItem("username")) {
+        next("/");
+      } else {
+        next();
+      }
+    },
   },
 ];
 

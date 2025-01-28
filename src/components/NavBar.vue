@@ -16,6 +16,11 @@
       <li>
         <RouterLink to="/history" class="nav-link">Tus Movimientos</RouterLink>
       </li>
+      <li>
+        <RouterLink to="/Current-State" class="nav-link">
+          Estado de Cuenta
+        </RouterLink>
+      </li>
     </ul>
     <div class="navbar-auth">
       <span class="username">👤 {{ username }}</span>
