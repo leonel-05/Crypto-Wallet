@@ -74,13 +74,18 @@
         />
       </div>
 
-      <button type="submit" class="btn-submit">
-        {{
-          transaction.action === "purchase"
-            ? "Registrar Compra"
-            : "Registrar Venta"
-        }}
-      </button>
+      <div class="form-buttons">
+        <button type="submit" class="btn-submit">
+          {{
+            transaction.action === "purchase"
+              ? "Reistrar Compra"
+              : "Registrar Venta"
+          }}
+        </button>
+        <button type="button" @click="cancelar" class="btn-cancel">
+          Cancelar
+        </button>
+      </div>
     </form>
 
     <p v-if="message" class="message">{{ message }}</p>
@@ -187,11 +192,15 @@ export default {
         setTimeout(() => {
           this.resetearFormulario();
         }, 3500);
+        this.$router.push("/history");
       } catch (error) {
         this.message =
           error.response?.data?.message ||
           "Ocurrió un error al registrar la operación.";
       }
+    },
+    cancelar() {
+      this.$router.push("/dashboard");
     },
     obtenerLogoCripto(criptoCode) {
       const logos = {
@@ -223,7 +232,7 @@ export default {
   color: #fff;
 }
 .crypto-market h1 {
-  margin-top: 140px;
+  margin-top: 130px;
 }
 .market-type {
   display: flex;
@@ -271,6 +280,25 @@ export default {
   margin: 10px 0;
   font-size: 1.1em;
   color: #333;
+}
+.form-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+.btn-cancel {
+  background-color: #e74c3c;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.btn-cancel:hover {
+  background-color: #c0392b;
 }
 .btn-submit {
   background-color: #45a247;

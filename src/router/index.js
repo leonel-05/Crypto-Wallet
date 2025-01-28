@@ -4,6 +4,7 @@ import LoginView from "@/views/LoginView.vue";
 import HistoryActionsView from "@/views/HistoryActionsView.vue";
 import MarketBuySell from "@/components/MarketBuySell.vue";
 import MarketBuySellView from "@/views/MarketBuySellView.vue";
+import EditTransaction from "@/components/EditTransaction.vue";
 
 const routes = [
   {
@@ -58,6 +59,12 @@ const routes = [
         next();
       }
     },
+  },
+  {
+    path: "/editar/:id",
+    name: "EditarTransaccion",
+    component: EditTransaction,
+    props: true,
   },
 ];
 
