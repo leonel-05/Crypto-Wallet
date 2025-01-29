@@ -83,6 +83,8 @@ export default {
     },
     async actualizarMonto() {
       try {
+        // Usamos SatoshiTango porque aquí necesitamos datos más generales, como el precio bid,
+        // para calcular resultados globales sin tanto detalle por moneda.
         const response = await axios.get(
           `https://criptoya.com/api/satoshitango/${this.transaction.cripto_code}/ars`
         );

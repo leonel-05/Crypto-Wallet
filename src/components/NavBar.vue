@@ -21,6 +21,11 @@
           Estado de Cuenta
         </RouterLink>
       </li>
+      <li>
+        <RouterLink to="/Investment" class="nav-link">
+          Tus Inversiones
+        </RouterLink>
+      </li>
     </ul>
     <div class="navbar-auth">
       <span class="username">👤 {{ username }}</span>

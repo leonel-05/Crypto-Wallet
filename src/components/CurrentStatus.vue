@@ -81,6 +81,8 @@ export default {
         const cryptoPromises = Object.keys(saldos).map(async (cripto_code) => {
           if (saldos[cripto_code] <= 0) return null; // Ignorar si no hay saldo positivo
 
+          // Usamos Binance porque necesitamos obtener datos más específicos por moneda,
+          // incluyendo detalles como precios bid y ask, y el volumen del mercado.
           const response = await axios.get(
             `https://criptoya.com/api/binance/${cripto_code}`
           );
