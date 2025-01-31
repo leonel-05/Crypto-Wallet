@@ -7,12 +7,18 @@ import MarketBuySellView from "@/views/MarketBuySellView.vue";
 import EditTransaction from "@/components/EditTransaction.vue";
 import CurrentStatusView from "@/views/CurrentStatusView.vue";
 import InvestmentView from "@/views/InvestmentView.vue";
+import RegisterForm from "@/components/RegisterForm.vue";
 
 const routes = [
   {
     path: "/",
     name: "Login",
     component: LoginView,
+  },
+  {
+    path: "/register",
+    name: "RegisterForm",
+    component: RegisterForm,
   },
   {
     path: "/dashboard",

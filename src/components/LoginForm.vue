@@ -1,7 +1,9 @@
 <template>
   <div class="login-container">
     <div class="login-box">
-      <h1>Bienvenidos a Cryptowallet</h1>
+      <h1>CRYPTOWALLET</h1>
+      <h3>Tu billetera virtual segura para gestionar criptomonedas</h3>
+
       <h2>INICIO DE SESIÓN</h2>
       <form @submit.prevent="login">
         <div class="login-form-box">
@@ -18,22 +20,54 @@
           {{ errorMessage }}
         </p>
       </form>
+
+      <p class="register-link">
+        ¿No tienes cuenta?
+        <RouterLink to="/register">Regístrate aquí</RouterLink>
+      </p>
     </div>
-    <div class="login-image">
-      <img
-        src="../assets/image/imageLogin.jpg"
-        alt="Cartera de criptomonedas"
-      />
+
+    <div class="crypto-chart">
+      <h2>Precios en tiempo real</h2>
+      <p v-if="loading" class="loading-message">Cargando precios...</p>
+      <canvas id="priceChart" v-show="!loading"></canvas>
     </div>
   </div>
 </template>
 
 <script>
+import {
+  Chart,
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend,
+} from "chart.js";
+
+Chart.register(
+  LineController,
+  LineElement,
+  PointElement,
+  CategoryScale,
+  LinearScale,
+  Title,
+  Tooltip,
+  Legend
+);
+
 export default {
   data() {
     return {
       username: "",
       errorMessage: "",
+      chart: null,
+      intervalId: null,
+      cryptoPrices: [],
+      loading: true, // Estado de carga
     };
   },
   methods: {
@@ -55,10 +89,112 @@ export default {
         return;
       }
 
-      localStorage.setItem("username", this.username);
+      // Obtener los datos del usuario registrado en localStorage
+      const storedUser = JSON.parse(localStorage.getItem("user"));
 
+      if (!storedUser || storedUser.username !== this.username) {
+        this.errorMessage =
+          "El usuario no está registrado. Regístrate primero.";
+        setTimeout(() => {
+          this.$router.push("/register");
+        }, 2000);
+        return;
+      }
+
+      // Guardar el username en localStorage para la sesión activa
+      localStorage.setItem("username", storedUser.username);
       this.$router.replace("/dashboard");
     },
+
+    async fetchCryptoPrices() {
+      if (!this.loading) return; // Evita múltiples llamadas si ya está cargando
+
+      this.loading = true; // Muestra el mensaje de carga
+      try {
+        const cryptos = ["BTCUSDT", "ETHUSDT", "LTCUSDT"];
+        const requests = cryptos.map((crypto) =>
+          fetch(
+            `https://api.binance.com/api/v3/ticker/24hr?symbol=${crypto}`
+          ).then((res) => res.json())
+        );
+        const responses = await Promise.all(requests);
+
+        if (!responses || responses.length === 0) {
+          throw new Error("La API de Binance no devolvió datos.");
+        }
+
+        this.cryptoPrices = responses.map((data) => ({
+          name: data.symbol.replace("USDT", ""),
+          price: parseFloat(data.lastPrice),
+        }));
+
+        this.updateChart();
+      } catch (error) {
+        console.error("Error al obtener los precios de Binance:", error);
+      } finally {
+        this.loading = false; // Oculta el mensaje de carga
+      }
+    },
+
+    renderChart() {
+      const ctx = document.getElementById("priceChart").getContext("2d");
+
+      if (this.chart) {
+        this.chart.destroy();
+      }
+
+      this.chart = new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: this.cryptoPrices.map((crypto) => crypto.name),
+          datasets: [
+            {
+              label: "Precio en USD",
+              data: this.cryptoPrices.map((crypto) => crypto.price),
+              borderColor: "#f3db05",
+              backgroundColor: "rgba(243, 219, 5, 0.2)",
+              borderWidth: 2,
+              pointRadius: 5,
+              pointBackgroundColor: "#fff",
+              pointBorderColor: "#f3db05",
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false, // Evita que se vea estirado
+          plugins: {
+            legend: {
+              position: "top",
+            },
+          },
+        },
+      });
+    },
+
+    updateChart() {
+      if (this.chart) {
+        this.chart.data.labels = this.cryptoPrices.map((crypto) => crypto.name);
+        this.chart.data.datasets[0].data = this.cryptoPrices.map(
+          (crypto) => crypto.price
+        );
+        this.chart.update();
+      } else {
+        this.renderChart();
+      }
+    },
+  },
+
+  mounted() {
+    this.fetchCryptoPrices();
+    this.intervalId = setInterval(this.fetchCryptoPrices, 120000);
+  },
+
+  beforeUnmount() {
+    clearInterval(this.intervalId);
+    if (this.chart) {
+      this.chart.destroy();
+    }
   },
 };
 </script>
@@ -66,38 +202,45 @@ export default {
 <style scoped>
 .login-container {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
   height: 100vh;
-  background-color: #202020;
+  padding: 20px;
+  background: linear-gradient(to bottom right, #283c86, #45a247);
+  color: #fff;
 }
 
 .login-box {
   flex: 1;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 2rem;
-  background: linear-gradient(to bottom right, #283c86, #45a247);
+  max-width: 50%;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 30px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-  margin: 2rem;
+  text-align: center;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
 }
 
 h1 {
   font-size: 3rem;
+  font-weight: bold;
   color: #f3db05;
-  text-align: center;
+  margin-bottom: 10px;
+}
+
+h3 {
+  font-size: 1rem;
+  color: #202020;
+  margin-bottom: 20px;
 }
 
 h2 {
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   color: #f3db05;
-  margin-bottom: 2rem;
-  text-align: center;
+  margin-bottom: 1.5rem;
 }
 
 .form-control {
-  width: 100%;
+  width: 50%;
   padding: 10px;
   border: 1px solid #ccc;
   border-radius: 5px;
@@ -106,7 +249,7 @@ h2 {
 }
 
 .btn-login {
-  width: 100%;
+  width: 50%;
   padding: 10px;
   background-color: #f4f818;
   color: black;
@@ -117,34 +260,26 @@ h2 {
   transition: all 0.3s ease;
 }
 
-.btn-login:hover {
-  background-color: #f3db05;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-}
-
-.text-danger {
-  color: #ff4d4d;
-  font-size: 0.9rem;
-}
-
-.login-image {
+.crypto-chart {
   flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow: hidden;
-}
-
-.login-image img {
-  max-width: 90%;
-  max-height: 90%;
+  max-width: 40%;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 20px;
   border-radius: 10px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  text-align: center;
 }
 
-.login-image img:hover {
-  transform: scale(1.05);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.6);
+.loading-message {
+  color: #202020;
+  font-weight: bold;
+}
+
+canvas {
+  width: 100% !important;
+  height: 250px !important;
+}
+
+.register-link {
+  color: black;
 }
 </style>

@@ -11,24 +11,26 @@
         </RouterLink>
       </li>
       <li>
-        <RouterLink to="/marketNav" class="nav-link">Market</RouterLink>
+        <RouterLink to="/marketNav" class="nav-link">🛒 Market</RouterLink>
       </li>
       <li>
-        <RouterLink to="/history" class="nav-link">Tus Movimientos</RouterLink>
+        <RouterLink to="/history" class="nav-link">
+          🗃️ Tus Movimientos
+        </RouterLink>
       </li>
       <li>
         <RouterLink to="/Current-State" class="nav-link">
-          Estado de Cuenta
+          💰 Estado de Cuenta
         </RouterLink>
       </li>
       <li>
         <RouterLink to="/Investment" class="nav-link">
-          Tus Inversiones
+          📊 Tus Inversiones
         </RouterLink>
       </li>
     </ul>
     <div class="navbar-auth">
-      <span class="username">👤 {{ username }}</span>
+      <span class="username">🔑 {{ username }}</span>
       <button @click="logout" class="logout-btn">Cerrar Sesión</button>
     </div>
   </div>

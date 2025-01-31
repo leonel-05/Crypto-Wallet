@@ -2,6 +2,12 @@
   <div class="transaction-history">
     <h2>Historial de Movimientos</h2>
 
+    <div class="filter">
+      <input type="date" v-model="filterDate" />
+      <button @click="filtrarPorFecha" class="btn-filter">Filtrar</button>
+      <button @click="borrarFiltro" class="btn-filter">Mostrar todas</button>
+    </div>
+
     <div v-if="loading" class="loading">
       Cargando información de su cuenta...
     </div>
@@ -23,7 +29,7 @@
         </tr>
       </thead>
       <tbody>
-        <tr v-for="transaction in transactions" :key="transaction._id">
+        <tr v-for="transaction in filteredTransactions" :key="transaction._id">
           <td>{{ formatearFecha(transaction.datetime) }}</td>
           <td>{{ transaction.cripto_code.toUpperCase() }}</td>
           <td>{{ transaction.crypto_amount }}</td>
@@ -56,7 +62,19 @@ export default {
     return {
       transactions: [],
       loading: true,
+      filterDate: "",
     };
+  },
+  computed: {
+    filteredTransactions() {
+      if (!this.filterDate) return this.transactions; // Si no hay fecha filtrada, devuelve todas las transacciones.
+      return this.transactions.filter((transaction) => {
+        const transactionDate = new Date(transaction.datetime)
+          .toISOString()
+          .split("T")[0];
+        return transactionDate === this.filterDate;
+      });
+    },
   },
   methods: {
     async obtenerTransacciones() {
@@ -105,6 +123,9 @@ export default {
         name: "EditarTransaccion",
         params: { id: transaction._id },
       });
+    },
+    borrarFiltro() {
+      this.filterDate = ""; // Restablece el filtro a vacío
     },
   },
   mounted() {
@@ -189,5 +210,14 @@ tbody tr:nth-child(even) {
 
 .btn-delete:hover {
   background-color: #c9302c;
+}
+
+.btn-filter {
+  background-color: #0f4788;
+  color: white;
+  border: none;
+  padding: 5px 10px;
+  border-radius: 5px;
+  cursor: pointer;
 }
 </style>
