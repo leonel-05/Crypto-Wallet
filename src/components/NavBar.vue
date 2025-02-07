@@ -1,5 +1,6 @@
 <template>
   <div class="navbar">
+    <!--Enlaces de navegación-->
     <ul class="navbar-links">
       <li>
         <RouterLink to="/dashboard" class="nav-link logo">
@@ -29,6 +30,7 @@
         </RouterLink>
       </li>
     </ul>
+    <!--Sección de autenticación(usuario y logout)-->
     <div class="navbar-auth">
       <span class="username">🔑 {{ username }}</span>
       <button @click="logout" class="logout-btn">Cerrar Sesión</button>
@@ -40,7 +42,7 @@
 export default {
   data() {
     return {
-      username: "", // Inicializamos el username vacío
+      username: "", // Almacenará el username del usuario
     };
   },
   created() {
@@ -48,6 +50,7 @@ export default {
     this.username = localStorage.getItem("username") || "Usuario";
   },
   methods: {
+    //Cierra sesión eliminando el username de localStorage y redirige al login
     logout() {
       localStorage.removeItem("username");
       this.$router.replace("/");
@@ -58,18 +61,18 @@ export default {
 
 <style scoped>
 .navbar {
-  position: fixed; /* Se fija en la parte superior de la página */
+  position: fixed;
   top: 0;
   width: 100%;
   padding: 15px 20px;
-  background: rgba(0, 0, 0, 0.5); /* Fondo negro con 50% de transparencia */
+  background: rgba(0, 0, 0, 0.5);
   color: white;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  z-index: 1000; /* Asegura que el navbar esté por encima de otros elementos */
-  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2); /* Agrega una sombra suave */
-  box-sizing: border-box; /* Incluye padding y border en el ancho total */
+  z-index: 1000;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  box-sizing: border-box;
 }
 
 .navbar-links {
@@ -104,8 +107,8 @@ export default {
 .navbar-auth {
   display: flex;
   align-items: center;
-  gap: 10px; /* Espaciado entre usuario y botón */
-  flex-wrap: wrap; /* Permite que los elementos se ajusten en caso de desbordamiento */
+  gap: 10px;
+  flex-wrap: wrap;
 }
 
 .username {
@@ -119,7 +122,7 @@ export default {
   background-color: #e74c3c;
   color: white;
   border: none;
-  padding: 8px 16px; /* Reducimos el padding para evitar desbordamiento */
+  padding: 8px 16px;
   cursor: pointer;
   border-radius: 20px;
   font-weight: 600;
@@ -138,27 +141,26 @@ export default {
   .navbar {
     flex-direction: column;
     align-items: flex-start;
-    padding: 10px 15px; /* Reducimos padding para dispositivos pequeños */
+    padding: 10px 15px;
   }
 
   .navbar-links {
     justify-content: flex-start;
     gap: 10px;
-    flex-wrap: wrap; /* Permite ajustar los enlaces en múltiples filas */
+    flex-wrap: wrap;
   }
 
   .navbar-auth {
-    width: 100%; /* Ocupa todo el ancho disponible */
+    width: 100%;
     margin-top: 10px;
-    justify-content: space-between; /* Espacia bien los elementos */
+    justify-content: space-between;
   }
 
   .logout-btn {
-    padding: 8px 12px; /* Ajustamos el tamaño del botón */
-    font-size: 14px; /* Texto ligeramente más pequeño */
+    padding: 8px 12px;
+    font-size: 14px;
   }
 }
-
 .logo-image {
   width: 70px;
   height: 70px;

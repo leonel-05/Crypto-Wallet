@@ -4,6 +4,7 @@
       <h1>Crear cuenta</h1>
       <h3>Únete a Cryptowallet y empieza a operar con criptomonedas</h3>
 
+      <!--Formulario de Registro-->
       <form @submit.prevent="register">
         <div class="form-group">
           <label for="username">ID de Usuario</label>
@@ -27,9 +28,11 @@
           />
         </div>
 
+        <!--Mensaje de error por si algo falla-->
         <button type="submit" class="btn btn-register">Registrarse</button>
         <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
 
+        <!--Enlace para devolver al usuario al login-->
         <p class="login-link">
           ¿Ya tienes cuenta?
           <RouterLink to="/">Inicia sesión aqui</RouterLink>
@@ -50,6 +53,7 @@ export default {
   },
   methods: {
     register() {
+      //Validaciones de username
       if (!this.username.trim() || !this.email.trim()) {
         this.errorMessage = "Todos los campos son obligatorios.";
         return;
@@ -67,15 +71,18 @@ export default {
         return;
       }
 
+      //Validación para un correo electrónico correcto y valido
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.email)) {
         this.errorMessage = "El correo electrónico no es valido";
         return;
       }
 
+      //Guardamos el usuario en localStorage
       const userData = { username: this.username, email: this.email };
       localStorage.setItem("username", JSON.stringify(userData));
 
+      //Envia al usuario al login para que ingrese
       this.$router.replace("/");
     },
   },

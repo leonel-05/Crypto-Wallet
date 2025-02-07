@@ -16,7 +16,7 @@
         Vender
       </button>
     </div>
-    <!--Form para la transacción, la crypto se inicializa con la elegida en el HomeDashboard-->
+    <!--Formulario para registrar la transacción-->
     <form @submit.prevent="enviarTransaccion" class="transaction-form">
       <div class="form-group">
         <label for="crypto">Criptomoneda:</label>
@@ -33,6 +33,7 @@
             <option value="ltc">Litecoin (LTC)</option>
           </select>
 
+          <!--Mostrar el logo de la cripto seleccionada-->
           <img
             :src="obtenerLogoCripto(transaction.cripto_code)"
             v-if="transaction.cripto_code"
@@ -41,6 +42,7 @@
           />
         </div>
       </div>
+      <!--Campo de cantidad de criptomonedas a comprar o vender-->
       <div class="form-group">
         <label for="crypto-amount">Cantidad:</label>
         <input
@@ -53,18 +55,22 @@
         />
       </div>
 
+      <!--Precio de la cripto seleccionada-->
       <p v-if="precioActual" class="price-info">
         Precio actual:
         <strong>{{ precioActual.toLocaleString() }} ARS</strong>
         por {{ transaction.cripto_code.toUpperCase() }}
       </p>
 
+      <!--Muestra el total de la transacción-->
       <p class="total-info">
         Total {{ transaction.action === "purchase" ? "a Pagar" : "a Recibir" }}:
         <strong>
           {{ transaction.money ? transaction.money.toLocaleString() : 0 }} ARS
         </strong>
       </p>
+
+      <!--Campo de fecha y hora-->
       <div class="form-group">
         <label for="datetime">Fecha y Hora:</label>
         <input
@@ -74,6 +80,7 @@
         />
       </div>
 
+      <!--Boton de acción (compra o venta)-->
       <div class="form-buttons">
         <button type="submit" class="btn-submit">
           {{
@@ -88,6 +95,7 @@
       </div>
     </form>
 
+    <!--Mesaje de confirmación o error-->
     <p v-if="message" class="message">{{ message }}</p>
   </div>
 </template>
@@ -115,6 +123,7 @@ export default {
     this.inicializarCriptoDesdeRuta();
   },
   methods: {
+    //Cambia el tipo de transacción
     establecerTipoTransaccion(tipo) {
       this.transaction.action = tipo;
     },
@@ -122,6 +131,7 @@ export default {
       const userId = localStorage.getItem("username");
       this.transaction.user_id = userId;
     },
+    //Inicializa la criptomoneda si se seleccionó desde dashboard
     inicializarCriptoDesdeRuta() {
       const cripto = this.$route.params.crypto;
       if (cripto) {
@@ -154,6 +164,7 @@ export default {
           "No se pudo obtener el precio actual. Intenta nuevamente.";
       }
     },
+    //Calcula el monto total en ARS
     actualizarMonto() {
       const cantidad = parseFloat(this.transaction.crypto_amount) || 0;
       if (cantidad > 0 && this.precioActual > 0) {
@@ -164,6 +175,7 @@ export default {
         this.transaction.money = 0;
       }
     },
+    //Registra la transacción en la base de datos
     async enviarTransaccion() {
       const { cripto_code, crypto_amount, money, datetime } = this.transaction;
 
@@ -201,9 +213,11 @@ export default {
           "Ocurrió un error al registrar la operación.";
       }
     },
+    //Redirige al usuario al dashboard
     cancelar() {
       this.$router.push("/dashboard");
     },
+    //Obtenemos el logo de la criptomoneda
     obtenerLogoCripto(criptoCode) {
       const logos = {
         btc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",

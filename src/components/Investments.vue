@@ -1,46 +1,50 @@
 <template>
   <div class="investment-analysis">
-    <h2>Análisis de Inversiones</h2>
-    <div v-if="loading" class="loading">Cargando información...</div>
+    <h2>📊 Análisis de Inversiones</h2>
+
+    <div v-if="loading" class="loading-message">Cargando datos...</div>
+
     <div v-else>
-      <table class="crypto-table">
+      <table class="investment-table">
         <thead>
           <tr>
             <th>Criptomoneda</th>
+            <th>Cantidad Total</th>
+            <th>Valor Actual</th>
             <th>Ganancia/Pérdida</th>
+            <th>% Cambio</th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="(result, cripto_code) in resultadosInversion"
-            :key="cripto_code"
-          >
-            <td>{{ cripto_code.toUpperCase() }}</td>
+          <tr v-for="(data, cripto) in resumenInversion" :key="cripto">
+            <td>{{ cripto.toUpperCase() }}</td>
+            <td>{{ data.totalAmount }}</td>
+            <td>{{ data.valorActual.toLocaleString() }} ARS</td>
             <td
               :class="{
-                'positive-result': result > 0,
-                'negative-result': result < 0,
-                'neutral-result': result === 0,
+                profit: data.ganancia > 0,
+                loss: data.ganancia < 0,
               }"
             >
-              {{ result.toLocaleString() }} ARS
-              <span v-if="result > 0" class="icon-positive">📈</span>
-              <span v-else-if="result < 0" class="icon-negative">📉</span>
-              <span v-else class="icon-neutral">⚖️</span>
+              {{ data.ganancia.toLocaleString() }} ARS
+            </td>
+            <td
+              :class="{
+                profit: data.porcentajeCambio > 0,
+                loss: data.porcentajeCambio < 0,
+              }"
+            >
+              {{ data.porcentajeCambio.toFixed(2) }}%
             </td>
           </tr>
         </tbody>
         <tfoot>
           <tr>
-            <td><strong>Total</strong></td>
-            <td
-              :class="{
-                'positive-result': totalInversion > 0,
-                'negative-result': totalInversion < 0,
-              }"
-            >
-              <strong>{{ totalInversion.toLocaleString() }} ARS</strong>
+            <td colspan="3"><strong>Total</strong></td>
+            <td :class="{ profit: totalGanancia > 0, loss: totalGanancia < 0 }">
+              <strong>{{ totalGanancia.toLocaleString() }} ARS</strong>
             </td>
+            <td></td>
           </tr>
         </tfoot>
       </table>
@@ -56,109 +60,113 @@ export default {
   data() {
     return {
       transactions: [],
-      resultadosInversion: {},
-      totalInversion: 0,
-      precios: {},
+      preciosActuales: {},
+      resumenInversion: {},
+      totalGanancia: 0,
       loading: true,
     };
   },
   methods: {
-    // Obtener todas las transacciones del usuario
-    async obtenerTransacciones() {
-      const userId = localStorage.getItem("username");
+    async obtenerDatos() {
       try {
-        const apiClient = axios.create({
-          baseURL: "https://laboratorio-ab82.restdb.io/rest",
-          headers: { "x-apikey": "650b525568885487530c00bb" },
-        });
-
-        const response = await apiClient.get(
-          `/transactions?q={"user_id": "${userId}"}`
-        );
-        this.transactions = response.data;
-        await this.calcularResultados();
+        await this.obtenerTransacciones();
+        await this.obtenerPreciosBinance();
+        this.calcularResultados();
       } catch (error) {
-        alert("Error al obtener las transacciones del usuario.");
+        console.error("Error al obtener datos:", error);
       } finally {
         this.loading = false;
       }
     },
 
-    // Obtener precios actuales de las criptomonedas
-    async obtenerPrecios() {
+    // Obtener transacciones del usuario
+    async obtenerTransacciones() {
+      const userId = localStorage.getItem("username");
+      const apiClient = axios.create({
+        baseURL: "https://laboratorio-ab82.restdb.io/rest",
+        headers: { "x-apikey": "650b525568885487530c00bb" },
+      });
+
+      const response = await apiClient.get(
+        `/transactions?q={"user_id": "${userId}"}`
+      );
+      this.transactions = response.data;
+    },
+
+    // Obtener precios desde Binance
+    async obtenerPreciosBinance() {
       try {
-        // Usamos SatoshiTango porque aquí necesitamos datos más generales, como el precio bid,
-        // para calcular resultados globales sin tanto detalle por moneda.
-        const response = await axios.get(
-          "https://criptoya.com/api/satoshitango"
+        const cryptos = [
+          ...new Set(this.transactions.map((t) => t.cripto_code)),
+        ];
+        const requests = cryptos.map((cripto) =>
+          axios.get(
+            `https://api.binance.com/api/v3/ticker/price?symbol=${cripto.toUpperCase()}USDT`
+          )
         );
-        this.precios = response.data;
+
+        const responses = await Promise.all(requests);
+        this.preciosActuales = responses.reduce((acc, res) => {
+          const cripto = res.data.symbol.replace("USDT", "").toLowerCase();
+          acc[cripto] = parseFloat(res.data.price);
+          return acc;
+        }, {});
       } catch (error) {
-        alert("Error al obtener los precios actuales.");
-        this.precios = {};
+        console.error("Error al obtener precios de Binance:", error);
       }
     },
 
-    // Calcular las ganancias/pérdidas por criptomoneda
-    async calcularResultados() {
-      const saldos = this.obtenerSaldosPorCripto();
-      await this.obtenerPrecios();
-
-      const resultados = {};
-      let total = 0;
-
-      Object.entries(saldos).forEach(([cripto_code, saldo]) => {
-        const currentPrice = this.precios[cripto_code]?.bid || 0;
-        const { purchaseTotal, purchaseAmount, saleTotal } = saldo;
-
-        let resultado = 0;
-        if (saleTotal > 0) {
-          const averagePurchasePrice =
-            purchaseAmount > 0 ? purchaseTotal / purchaseAmount : 0;
-          resultado = saleTotal - averagePurchasePrice * purchaseAmount;
-        } else {
-          resultado = currentPrice * purchaseAmount - purchaseTotal;
-        }
-
-        resultados[cripto_code] = parseFloat(resultado.toFixed(2));
-        total += resultado;
-      });
-
-      this.resultadosInversion = resultados;
-      this.totalInversion = parseFloat(total.toFixed(2));
-    },
-
-    // Obtener saldos por criptomoneda
-    obtenerSaldosPorCripto() {
-      const saldos = {};
+    // Calcular resultados de inversión
+    calcularResultados() {
+      const resumen = {};
+      let totalGanancia = 0;
 
       this.transactions.forEach(
         ({ cripto_code, crypto_amount, money, action }) => {
-          const amount = parseFloat(crypto_amount);
-          const totalMoney = parseFloat(money);
-
-          if (!saldos[cripto_code]) {
-            saldos[cripto_code] = {
-              purchaseAmount: 0,
-              purchaseTotal: 0,
-              saleTotal: 0,
+          if (!resumen[cripto_code]) {
+            resumen[cripto_code] = {
+              totalAmount: 0,
+              totalInvertido: 0,
+              totalVenta: 0,
             };
           }
 
           if (action === "purchase") {
-            saldos[cripto_code].purchaseAmount += amount;
-            saldos[cripto_code].purchaseTotal += totalMoney;
-          } else if (action === "sale") {
-            saldos[cripto_code].saleTotal += totalMoney;
+            resumen[cripto_code].totalAmount += parseFloat(crypto_amount);
+            resumen[cripto_code].totalInvertido += parseFloat(money);
+          } else {
+            resumen[cripto_code].totalAmount -= parseFloat(crypto_amount);
+            resumen[cripto_code].totalVenta += parseFloat(money);
           }
         }
       );
 
-      return saldos;
+      Object.keys(resumen).forEach((cripto) => {
+        const totalAmount = resumen[cripto].totalAmount;
+        const totalInvertido = resumen[cripto].totalInvertido;
+        const totalVenta = resumen[cripto].totalVenta;
+        const currentPrice = this.preciosActuales[cripto] || 0;
+
+        const valorActual = totalAmount * currentPrice;
+        const ganancia = totalVenta + valorActual - totalInvertido;
+        const porcentajeCambio =
+          totalInvertido > 0 ? (ganancia / totalInvertido) * 100 : 0;
+
+        resumen[cripto] = {
+          totalAmount,
+          valorActual,
+          ganancia,
+          porcentajeCambio,
+        };
+        totalGanancia += ganancia;
+      });
+
+      this.resumenInversion = resumen;
+      this.totalGanancia = totalGanancia;
     },
   },
   mounted() {
-    this.obtenerTransacciones();
+    this.obtenerDatos();
   },
 };
 </script>
@@ -179,57 +187,39 @@ h2 {
   font-size: 2.5em;
 }
 
-.crypto-table {
+.investment-table {
   width: 100%;
-  max-width: 800px;
-  margin-top: 20px;
-  background: white;
-  border-radius: 10px;
+  max-width: 850px;
+  background: rgb(155, 154, 154);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-
-.crypto-table th,
-.crypto-table td {
-  padding: 15px;
   text-align: center;
 }
 
-.crypto-table th {
+.investment-table th {
   background-color: #283c86;
   color: white;
+  padding: 10px;
+  border: 1.5px solid black;
 }
 
-.crypto-table td {
-  font-size: 1.2em;
-  background-color: #a0a9ac;
+.investment-table td {
+  padding: 10px;
+  font-size: 1.1em;
+  border: 1.5px solid black;
 }
 
-.crypto-table tr:nth-child(even) {
-  background-color: #f2f2f2;
-}
-
-.crypto-table tr:hover {
-  background-color: #d9edf7;
-}
-
-.positive-result {
+.profit {
   color: #28a745;
   font-weight: bold;
 }
 
-.negative-result {
+.loss {
   color: #dc3545;
   font-weight: bold;
 }
 
-.neutral-result {
-  color: #ffc107;
-  font-weight: bold;
-}
-
-.icon-positive,
-.icon-negative,
-.icon-neutral {
-  margin-left: 10px;
+.loading-message {
+  font-size: 1.2em;
+  color: white;
 }
 </style>

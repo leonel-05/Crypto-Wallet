@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
-    <!-- Sección de bienvenida con GIF de fondo -->
     <div class="message-welcome-container">
+      <!--Sección de Mensaje de Bienvenida-->
       <div class="message-welcome">
         <h1>LA ÚNICA BILLETERA QUE NECESITÁS</h1>
         <h3>
@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <!-- Lista de criptomonedas -->
+    <!--Sección para selecciónar una Cripto y nos envie al Market-->
     <div class="crypto-select">
       <h1>Market</h1>
       <p>¡Seleccione su criptomoneda preferida y comience a generar dinero!</p>
@@ -39,6 +39,7 @@ export default {
   data() {
     return {
       usuario: localStorage.getItem("username") || "Usuario",
+      //Lista de criptomonedas disponibles con su imagen asociada
       cryptos: [
         { name: "Bitcoin", short: "btc", image: "LogoBitcoin.jpg" },
         { name: "Ethereum", short: "eth", image: "LogoEthereum.png" },
@@ -46,6 +47,7 @@ export default {
       ],
     };
   },
+  //Metodo que nos dirige a MarketBuySell con una Criptomoneda ya seleccionada
   methods: {
     goToMarket(crypto) {
       this.$router.push({ name: "MarketBuySell", params: { crypto } });
@@ -93,11 +95,10 @@ export default {
   color: #dcdcdc;
 }
 
-/* Sección de criptomonedas */
 .crypto-select {
   margin-top: 50px;
   width: 100%;
-  padding: 20px; /* Para dar algo de espacio */
+  padding: 20px;
 }
 
 .crypto-select h1 {
@@ -132,7 +133,7 @@ export default {
   cursor: pointer;
   text-align: center;
   border: 2px solid rgba(255, 255, 255, 0.2);
-  border-radius: 15px;
+  border-radius: 50px;
   padding: 20px;
   transition: transform 0.3s, box-shadow 0.3s;
   background-color: white;

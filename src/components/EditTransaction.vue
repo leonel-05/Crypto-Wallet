@@ -1,9 +1,12 @@
 <template>
   <div class="edit-transaction">
     <h2>Editar Transacción</h2>
+    <!--Mensaje de espera mientras cargan los datos-->
     <div v-if="isLoading" class="loading-spinner">Cargando...</div>
+    <!--Formulario para editar la transacción-->
     <form @submit.prevent="actualizarTransaccion" class="form">
       <div class="form-group">
+        <!--Selecciónamos la cripto-->
         <label for="crypto_code">Criptomoneda:</label>
         <select v-model="transaction.cripto_code" id="crypto_code" required>
           <option value="btc">Bitcoin</option>
@@ -13,6 +16,7 @@
       </div>
 
       <div class="form-group">
+        <!--Edita la cantidad-->
         <label for="crypto_amount">Cantidad</label>
         <input
           type="number"
@@ -24,6 +28,7 @@
       </div>
 
       <div class="form-group">
+        <!--Selecciónamos la acción-->
         <label for="action">Acción</label>
         <select v-model="transaction.action" id="action" required>
           <option value="purchase">Comprar</option>
@@ -32,6 +37,7 @@
       </div>
 
       <div class="form-group">
+        <!--Muestra el valor calculado en ARS-->
         <label>Dinero Calculado:</label>
         <p class="calculated-money">{{ transaction.money || "0" }} ARS</p>
       </div>
@@ -51,6 +57,7 @@
 <script>
 import axios from "axios";
 
+// Configuración del cliente de API para acceder a la base de datos
 const apiClient = axios.create({
   baseURL: "https://laboratorio-ab82.restdb.io/rest",
   headers: { "x-apikey": "650b525568885487530c00bb" },
@@ -58,7 +65,7 @@ const apiClient = axios.create({
 
 export default {
   name: "EditarTransaccion",
-  props: ["id"],
+  props: ["id"], //Obtiene el ID de la transacción desde la ruta
   data() {
     return {
       transaction: {
@@ -73,6 +80,7 @@ export default {
     };
   },
   methods: {
+    //Obntenemos la transacción por su ID
     async obtenerTransacciones() {
       try {
         const response = await apiClient.get(`/transactions/${this.id}`);
@@ -82,12 +90,12 @@ export default {
       }
     },
     async actualizarMonto() {
+      //Calcula el valor de la transacción en ARS usando SATOSHITANGO
       try {
-        // Usamos SatoshiTango porque aquí necesitamos datos más generales, como el precio bid,
-        // para calcular resultados globales sin tanto detalle por moneda.
         const response = await axios.get(
           `https://criptoya.com/api/satoshitango/${this.transaction.cripto_code}/ars`
         );
+        //Obtiene el precio actual en ARS
         const currentPrice = response.data.ask;
         this.transaction.money = parseFloat(
           (this.transaction.crypto_amount * currentPrice).toFixed(2)
@@ -96,8 +104,10 @@ export default {
         alert("Error al obtener el valor de la Criptomoneda.");
       }
     },
+    //actualiza la transacción en la base de datos
     async actualizarTransaccion() {
       this.isLoading = true;
+      //Validaciones generales
       if (
         !this.transaction.cripto_code ||
         !this.transaction.crypto_amount ||
@@ -115,6 +125,7 @@ export default {
       }
 
       try {
+        //Datos que se actualizarán
         const { action, cripto_code, crypto_amount, money } = this.transaction;
         const updatedTransaction = {
           action,
@@ -123,6 +134,7 @@ export default {
           money,
         };
 
+        //Enviar los datos actualizados a la API
         await apiClient.patch(`/transactions/${this.id}`, updatedTransaction);
         alert("Transacción actualizada con éxito.");
         this.$router.push("/history");
@@ -143,7 +155,6 @@ export default {
 </script>
 
 <style scoped>
-/* Contenedor general */
 .edit-transaction {
   display: flex;
   flex-direction: column;
@@ -155,14 +166,12 @@ export default {
   color: #fff;
 }
 
-/* Título */
 .edit-transaction h2 {
   margin-top: 60px;
   font-size: 2.5em;
   font-weight: bold;
 }
 
-/* Formulario */
 .form {
   background-color: rgba(255, 255, 255, 0.95);
   padding: 25px;
@@ -204,7 +213,6 @@ export default {
   outline: none;
 }
 
-/* Dinero Calculado */
 .calculated-money {
   background-color: #e8f5e9;
   padding: 10px;
@@ -214,7 +222,6 @@ export default {
   text-align: center;
 }
 
-/* Botones */
 .form-buttons {
   display: flex;
   justify-content: center;

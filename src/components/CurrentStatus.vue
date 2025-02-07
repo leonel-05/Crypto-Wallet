@@ -1,7 +1,9 @@
 <template>
   <div class="account-analysis">
     <h2>Análisis de tu cuenta</h2>
+    <!--Mostramos un mensaje mientras esperamos que carguen los datos-->
     <div v-if="loading" class="loading-spinner">Cargando información...</div>
+    <!--Si ya cargo mostramos la tabla con los datos-->
     <div v-else>
       <table class="crypto-table">
         <thead>
@@ -12,6 +14,7 @@
           </tr>
         </thead>
         <tbody>
+          <!--Itera sobre cada criptomoneda del usuario y muestra los datos-->
           <tr
             v-for="transaction in agregarCryptos"
             :key="transaction.cripto_code"
@@ -41,21 +44,24 @@ export default {
   name: "CurrentState",
   data() {
     return {
-      transactions: [],
-      agregarCryptos: [],
-      valorTotal: 0,
+      transactions: [], //Almacena las transcaciónes del usuario
+      agregarCryptos: [], // Almacena las criptomonedas con su cantidad y valor en ARS
+      valorTotal: 0, //Valor total en ARS
       loading: true,
     };
   },
   methods: {
+    //Obtenemos las transacciones del usuario en la base del datos
     async obtenerTransacciones() {
       const userId = localStorage.getItem("username");
       try {
+        //Configuración de la API para acceder a la base de datos
         const apiClient = axios.create({
           baseURL: "https://laboratorio-ab82.restdb.io/rest",
           headers: { "x-apikey": "650b525568885487530c00bb" },
         });
 
+        //Realiza la solicitud GET filtrada por el user_id
         const response = await apiClient.get(
           `/transactions?q={"user_id": "${userId}"}`
         );
@@ -66,10 +72,11 @@ export default {
         this.loading = false;
       }
     },
+    //Calcula la cantidad total de cada cripto y su valor en ARS
     async calcularInversiones() {
-      const saldos = {};
+      const saldos = {}; // Objeto para almacenar el saldo de cada criptomoneda
 
-      // Calcular las cantidades totales por moneda
+      // Recorre todas las transacciones y calcula el saldo total por moneda
       this.transactions.forEach(({ cripto_code, crypto_amount, action }) => {
         const amount = parseFloat(crypto_amount);
         if (!saldos[cripto_code]) saldos[cripto_code] = 0;
@@ -86,13 +93,14 @@ export default {
           const response = await axios.get(
             `https://criptoya.com/api/binance/${cripto_code}`
           );
-          const currentPrice = response.data?.bid || 0; // Validar que exista el precio
+          // Extrae el precio bid (precio de compra)
+          const currentPrice = response.data?.bid || 0;
 
           return {
             cripto_code,
-            total_amount: saldos[cripto_code],
+            total_amount: saldos[cripto_code], //Cantidad total
             total_value: parseFloat(
-              (saldos[cripto_code] * currentPrice).toFixed(2)
+              (saldos[cripto_code] * currentPrice).toFixed(2) //Valor total en ARS
             ),
           };
         });
@@ -100,7 +108,7 @@ export default {
         // Procesar las promesas
         const resultados = await Promise.all(cryptoPromises);
 
-        // Filtrar monedas válidas y calcular el total
+        // Filtrar monedas válidas(elimina las sin saldo) y calcular el total
         this.agregarCryptos = resultados.filter((crypto) => crypto !== null);
         this.valorTotal = this.agregarCryptos.reduce(
           (sum, { total_value }) => sum + total_value,
@@ -117,6 +125,7 @@ export default {
       }
     },
   },
+  //Cuando el componente se monta obtiene las transacciónes del usuario
   mounted() {
     this.obtenerTransacciones();
   },
