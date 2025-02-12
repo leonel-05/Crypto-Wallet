@@ -238,6 +238,9 @@ export default {
   min-height: 100vh;
   color: #fff;
 }
+.crypto-market h1 {
+  margin-top: 130px;
+}
 .market-type {
   display: flex;
   gap: 20px;
@@ -274,5 +277,47 @@ export default {
   max-width: 500px;
   width: 100%;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+.form-group {
+  margin-bottom: 15px;
+  color: #333;
+}
+.price-info,
+.total-info {
+  margin: 10px 0;
+  font-size: 1.1em;
+  color: #333;
+}
+.form-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 20px;
+}
+.btn-cancel {
+  background-color: #e74c3c;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.btn-cancel:hover {
+  background-color: #c0392b;
+}
+.btn-submit {
+  background-color: #45a247;
+  color: #fff;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  font-size: 16px;
+  cursor: pointer;
+  margin-top: 10px;
+}
+.btn-submit:hover {
+  background-color: #399f38;
 }
 </style>
