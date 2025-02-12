@@ -1,7 +1,8 @@
 <template>
   <div class="crypto-market">
     <h1>Compra y Venta de Criptomonedas</h1>
-    <!--botones para seleccionar tipo de transacción. Se inicializa en compra-->
+
+    <!-- Botones para seleccionar tipo de transacción -->
     <div class="market-type">
       <button
         @click="establecerTipoTransaccion('purchase')"
@@ -16,7 +17,8 @@
         Vender
       </button>
     </div>
-    <!--Formulario para registrar la transacción-->
+
+    <!-- Formulario de transacción -->
     <form @submit.prevent="enviarTransaccion" class="transaction-form">
       <div class="form-group">
         <label for="crypto">Criptomoneda:</label>
@@ -32,8 +34,6 @@
             <option value="eth">Ethereum (ETH)</option>
             <option value="ltc">Litecoin (LTC)</option>
           </select>
-
-          <!--Mostrar el logo de la cripto seleccionada-->
           <img
             :src="obtenerLogoCripto(transaction.cripto_code)"
             v-if="transaction.cripto_code"
@@ -42,7 +42,7 @@
           />
         </div>
       </div>
-      <!--Campo de cantidad de criptomonedas a comprar o vender-->
+
       <div class="form-group">
         <label for="crypto-amount">Cantidad:</label>
         <input
@@ -55,22 +55,19 @@
         />
       </div>
 
-      <!--Precio de la cripto seleccionada-->
       <p v-if="precioActual" class="price-info">
         Precio actual:
         <strong>{{ precioActual.toLocaleString() }} ARS</strong>
         por {{ transaction.cripto_code.toUpperCase() }}
       </p>
 
-      <!--Muestra el total de la transacción-->
       <p class="total-info">
         Total {{ transaction.action === "purchase" ? "a Pagar" : "a Recibir" }}:
         <strong>
-          {{ transaction.money ? transaction.money.toLocaleString() : 0 }} ARS
+          {{ transaction.money ? transaction.money.toLocaleString() : 0 }}ARS
         </strong>
       </p>
 
-      <!--Campo de fecha y hora-->
       <div class="form-group">
         <label for="datetime">Fecha y Hora:</label>
         <input
@@ -80,12 +77,11 @@
         />
       </div>
 
-      <!--Boton de acción (compra o venta)-->
       <div class="form-buttons">
         <button type="submit" class="btn-submit">
           {{
             transaction.action === "purchase"
-              ? "Reistrar Compra"
+              ? "Registrar Compra"
               : "Registrar Venta"
           }}
         </button>
@@ -95,7 +91,6 @@
       </div>
     </form>
 
-    <!--Mesaje de confirmación o error-->
     <p v-if="message" class="message">{{ message }}</p>
   </div>
 </template>
@@ -106,6 +101,7 @@ import axios from "axios";
 export default {
   data() {
     return {
+      user: null, // Almacenará los datos del usuario
       transaction: {
         user_id: "",
         action: "purchase",
@@ -119,19 +115,23 @@ export default {
     };
   },
   mounted() {
-    this.comprobarUsuario();
+    this.obtenerUsuario();
     this.inicializarCriptoDesdeRuta();
   },
   methods: {
-    //Cambia el tipo de transacción
+    // Obtiene el usuario desde localStorage
+    obtenerUsuario() {
+      const storedUser = localStorage.getItem("user");
+      this.user = storedUser ? JSON.parse(storedUser) : { username: "Usuario" };
+      this.transaction.user_id = this.user.username; // Asignamos el username del usuario
+    },
+
+    // Establece el tipo de transacción (compra o venta)
     establecerTipoTransaccion(tipo) {
       this.transaction.action = tipo;
     },
-    comprobarUsuario() {
-      const userId = localStorage.getItem("username");
-      this.transaction.user_id = userId;
-    },
-    //Inicializa la criptomoneda si se seleccionó desde dashboard
+
+    // Inicializa la criptomoneda si se seleccionó desde Dashboard
     inicializarCriptoDesdeRuta() {
       const cripto = this.$route.params.crypto;
       if (cripto) {
@@ -139,43 +139,33 @@ export default {
         this.obtenerPrecioActual();
       }
     },
+
     async obtenerPrecioActual() {
       if (!this.transaction.cripto_code) return;
-
       try {
-        // Usamos SatoshiTango porque aquí necesitamos datos más generales, como el precio bid,
-        // para calcular resultados globales sin tanto detalle por moneda.
         const response = await axios.get(
           `https://criptoya.com/api/satoshitango/${this.transaction.cripto_code}/ars`
         );
 
         const priceData = response.data;
-        if (priceData && priceData.totalBid) {
-          this.precioActual = priceData.totalBid;
-        } else if (priceData && priceData.ask) {
-          this.precioActual = priceData.totalask;
-        } else {
-          this.precioActual = 0;
-        }
-
+        this.precioActual = priceData.totalBid || priceData.ask || 0;
         this.actualizarMonto();
       } catch (error) {
         this.message =
           "No se pudo obtener el precio actual. Intenta nuevamente.";
       }
     },
-    //Calcula el monto total en ARS
+
+    // Calcula el monto total en ARS
     actualizarMonto() {
       const cantidad = parseFloat(this.transaction.crypto_amount) || 0;
-      if (cantidad > 0 && this.precioActual > 0) {
-        this.transaction.money = parseFloat(
-          (this.transaction.crypto_amount * this.precioActual).toFixed(2)
-        );
-      } else {
-        this.transaction.money = 0;
-      }
+      this.transaction.money =
+        cantidad > 0 && this.precioActual > 0
+          ? parseFloat((cantidad * this.precioActual).toFixed(2))
+          : 0;
     },
-    //Registra la transacción en la base de datos
+
+    // Registra la transacción en la base de datos
     async enviarTransaccion() {
       const { cripto_code, crypto_amount, money, datetime } = this.transaction;
 
@@ -184,15 +174,15 @@ export default {
         parseFloat(crypto_amount) <= 0 ||
         !money ||
         parseFloat(money) <= 0 ||
-        !datetime ||
-        new Date(datetime) > new Date()
+        !datetime
       ) {
         this.message = "Por favor, completa todos los campos correctamente.";
         return;
       }
 
-      const fecha = new Date(this.transaction.datetime);
-      this.transaction.datetime = fecha.toISOString();
+      this.transaction.datetime = new Date(
+        this.transaction.datetime
+      ).toISOString();
 
       try {
         const clienteApi = axios.create({
@@ -205,19 +195,19 @@ export default {
 
         setTimeout(() => {
           this.resetearFormulario();
+          this.$router.push("/history");
         }, 3500);
-        this.$router.push("/history");
       } catch (error) {
         this.message =
           error.response?.data?.message ||
           "Ocurrió un error al registrar la operación.";
       }
     },
-    //Redirige al usuario al dashboard
+
     cancelar() {
       this.$router.push("/dashboard");
     },
-    //Obtenemos el logo de la criptomoneda
+
     obtenerLogoCripto(criptoCode) {
       const logos = {
         btc: "https://cryptologos.cc/logos/bitcoin-btc-logo.png",
@@ -226,6 +216,7 @@ export default {
       };
       return logos[criptoCode] || "";
     },
+
     resetearFormulario() {
       this.transaction.crypto_amount = "";
       this.transaction.money = "";
@@ -246,9 +237,6 @@ export default {
   background: linear-gradient(to bottom right, #283c86, #45a247);
   min-height: 100vh;
   color: #fff;
-}
-.crypto-market h1 {
-  margin-top: 130px;
 }
 .market-type {
   display: flex;
@@ -286,47 +274,5 @@ export default {
   max-width: 500px;
   width: 100%;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-}
-.form-group {
-  margin-bottom: 15px;
-  color: #333;
-}
-.price-info,
-.total-info {
-  margin: 10px 0;
-  font-size: 1.1em;
-  color: #333;
-}
-.form-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 20px;
-  margin-top: 20px;
-}
-.btn-cancel {
-  background-color: #e74c3c;
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-.btn-cancel:hover {
-  background-color: #c0392b;
-}
-.btn-submit {
-  background-color: #45a247;
-  color: #fff;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  font-size: 16px;
-  cursor: pointer;
-  margin-top: 10px;
-}
-.btn-submit:hover {
-  background-color: #399f38;
 }
 </style>

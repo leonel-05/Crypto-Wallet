@@ -4,7 +4,6 @@
       <h1>Crear cuenta</h1>
       <h3>Únete a Cryptowallet y empieza a operar con criptomonedas</h3>
 
-      <!--Formulario de Registro-->
       <form @submit.prevent="register">
         <div class="form-group">
           <label for="username">ID de Usuario</label>
@@ -28,14 +27,12 @@
           />
         </div>
 
-        <!--Mensaje de error por si algo falla-->
         <button type="submit" class="btn btn-register">Registrarse</button>
         <p v-if="errorMessage" class="text-danger">{{ errorMessage }}</p>
 
-        <!--Enlace para devolver al usuario al login-->
         <p class="login-link">
           ¿Ya tienes cuenta?
-          <RouterLink to="/">Inicia sesión aqui</RouterLink>
+          <RouterLink to="/">Inicia sesión aquí</RouterLink>
         </p>
       </form>
     </div>
@@ -53,37 +50,43 @@ export default {
   },
   methods: {
     register() {
-      //Validaciones de username
+      if (!this.validarDatos()) return;
+
+      // Guardamos el usuario correctamente en localStorage bajo la clave "user"
+      const userData = { username: this.username, email: this.email };
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      alert("Registro exitoso. Ahora puedes iniciar sesión.");
+      this.$router.replace("/");
+    },
+
+    validarDatos() {
+      this.errorMessage = "";
+
       if (!this.username.trim() || !this.email.trim()) {
         this.errorMessage = "Todos los campos son obligatorios.";
-        return;
+        return false;
       }
 
       if (this.username.length < 3 || this.username.length > 15) {
-        this.errorMessage = "El ID debe tener entre 3 y 15 Caracteres.";
-        return;
+        this.errorMessage = "El ID debe tener entre 3 y 15 caracteres.";
+        return false;
       }
 
       const idRegex = /^(?=.*[a-zA-Z])(?=.*?\d)[a-zA-Z0-9]+$/;
       if (!idRegex.test(this.username)) {
         this.errorMessage =
           "El ID debe contener al menos una letra y un número.";
-        return;
+        return false;
       }
 
-      //Validación para un correo electrónico correcto y valido
       const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
       if (!emailRegex.test(this.email)) {
-        this.errorMessage = "El correo electrónico no es valido";
-        return;
+        this.errorMessage = "El correo electrónico no es válido.";
+        return false;
       }
 
-      //Guardamos el usuario en localStorage
-      const userData = { username: this.username, email: this.email };
-      localStorage.setItem("username", JSON.stringify(userData));
-
-      //Envia al usuario al login para que ingrese
-      this.$router.replace("/");
+      return true;
     },
   },
 };

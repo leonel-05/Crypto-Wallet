@@ -59,6 +59,7 @@ export default {
   name: "InvestmentAnalysis",
   data() {
     return {
+      user: null, // Almacena el usuario autenticado
       transactions: [],
       preciosActuales: {},
       resumenInversion: {},
@@ -68,6 +69,12 @@ export default {
   },
   methods: {
     async obtenerDatos() {
+      this.obtenerUsuario();
+      if (!this.user.username) {
+        alert("No hay un usuario autenticado.");
+        return;
+      }
+
       try {
         await this.obtenerTransacciones();
         await this.obtenerPreciosBinance();
@@ -79,16 +86,21 @@ export default {
       }
     },
 
-    // Obtener transacciones del usuario
+    // Obtiene el usuario desde localStorage
+    obtenerUsuario() {
+      const storedUser = localStorage.getItem("user");
+      this.user = storedUser ? JSON.parse(storedUser) : { username: "Usuario" };
+    },
+
+    // Obtener transacciones del usuario autenticado
     async obtenerTransacciones() {
-      const userId = localStorage.getItem("username");
       const apiClient = axios.create({
         baseURL: "https://laboratorio-ab82.restdb.io/rest",
         headers: { "x-apikey": "650b525568885487530c00bb" },
       });
 
       const response = await apiClient.get(
-        `/transactions?q={"user_id": "${userId}"}`
+        `/transactions?q={"user_id": "${this.user.username}"}`
       );
       this.transactions = response.data;
     },

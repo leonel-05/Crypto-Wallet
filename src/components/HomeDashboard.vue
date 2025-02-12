@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <div class="message-welcome-container">
-      <!--Sección de Mensaje de Bienvenida-->
+      <!-- Sección de Mensaje de Bienvenida -->
       <div class="message-welcome">
         <h1>LA ÚNICA BILLETERA QUE NECESITÁS</h1>
         <h3>
@@ -11,7 +11,7 @@
       </div>
     </div>
 
-    <!--Sección para selecciónar una Cripto y nos envie al Market-->
+    <!-- Sección para seleccionar una Cripto y enviarnos al Market -->
     <div class="crypto-select">
       <h1>Market</h1>
       <p>¡Seleccione su criptomoneda preferida y comience a generar dinero!</p>
@@ -38,8 +38,7 @@
 export default {
   data() {
     return {
-      usuario: localStorage.getItem("username") || "Usuario",
-      //Lista de criptomonedas disponibles con su imagen asociada
+      user: null, // Almacenará el usuario autenticado
       cryptos: [
         { name: "Bitcoin", short: "btc", image: "LogoBitcoin.jpg" },
         { name: "Ethereum", short: "eth", image: "LogoEthereum.png" },
@@ -47,8 +46,13 @@ export default {
       ],
     };
   },
-  //Metodo que nos dirige a MarketBuySell con una Criptomoneda ya seleccionada
+  created() {
+    // Obtener usuario desde localStorage y parsear los datos
+    const storedUser = localStorage.getItem("user");
+    this.user = storedUser ? JSON.parse(storedUser) : { username: "Usuario" };
+  },
   methods: {
+    // Método para dirigir al MarketBuySell con una cripto seleccionada
     goToMarket(crypto) {
       this.$router.push({ name: "MarketBuySell", params: { crypto } });
     },

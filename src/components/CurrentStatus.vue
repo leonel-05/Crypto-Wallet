@@ -1,9 +1,10 @@
 <template>
   <div class="account-analysis">
     <h2>Análisis de tu cuenta</h2>
-    <!--Mostramos un mensaje mientras esperamos que carguen los datos-->
+    <!-- Mensaje de carga mientras se obtienen los datos -->
     <div v-if="loading" class="loading-spinner">Cargando información...</div>
-    <!--Si ya cargo mostramos la tabla con los datos-->
+
+    <!-- Tabla con los datos cuando la carga finaliza -->
     <div v-else>
       <table class="crypto-table">
         <thead>
@@ -14,12 +15,11 @@
           </tr>
         </thead>
         <tbody>
-          <!--Itera sobre cada criptomoneda del usuario y muestra los datos-->
           <tr
             v-for="transaction in agregarCryptos"
             :key="transaction.cripto_code"
           >
-            <td>{{ transaction.cripto_code }}</td>
+            <td>{{ transaction.cripto_code.toUpperCase() }}</td>
             <td>{{ transaction.total_amount }}</td>
             <td>{{ transaction.total_value.toLocaleString() }} ARS</td>
           </tr>
@@ -44,26 +44,37 @@ export default {
   name: "CurrentState",
   data() {
     return {
-      transactions: [], //Almacena las transcaciónes del usuario
-      agregarCryptos: [], // Almacena las criptomonedas con su cantidad y valor en ARS
-      valorTotal: 0, //Valor total en ARS
+      user: null, // Almacena los datos del usuario autenticado
+      transactions: [], // Almacena las transacciones del usuario
+      agregarCryptos: [], // Criptomonedas con su cantidad y valor en ARS
+      valorTotal: 0, // Valor total en ARS
       loading: true,
     };
   },
   methods: {
-    //Obtenemos las transacciones del usuario en la base del datos
+    // Obtiene el usuario desde localStorage
+    obtenerUsuario() {
+      const storedUser = localStorage.getItem("user");
+      this.user = storedUser ? JSON.parse(storedUser) : { username: "Usuario" };
+    },
+
+    // Obtiene las transacciones del usuario autenticado
     async obtenerTransacciones() {
-      const userId = localStorage.getItem("username");
+      this.obtenerUsuario();
+      if (!this.user.username) {
+        alert("No hay un usuario autenticado.");
+        return;
+      }
+
       try {
-        //Configuración de la API para acceder a la base de datos
         const apiClient = axios.create({
           baseURL: "https://laboratorio-ab82.restdb.io/rest",
           headers: { "x-apikey": "650b525568885487530c00bb" },
         });
 
-        //Realiza la solicitud GET filtrada por el user_id
+        // Filtramos por el usuario autenticado
         const response = await apiClient.get(
-          `/transactions?q={"user_id": "${userId}"}`
+          `/transactions?q={"user_id": "${this.user.username}"}`
         );
         this.transactions = response.data;
         this.calcularInversiones();
@@ -72,11 +83,12 @@ export default {
         this.loading = false;
       }
     },
-    //Calcula la cantidad total de cada cripto y su valor en ARS
+
+    // Calcula la cantidad total de cada cripto y su valor en ARS
     async calcularInversiones() {
       const saldos = {}; // Objeto para almacenar el saldo de cada criptomoneda
 
-      // Recorre todas las transacciones y calcula el saldo total por moneda
+      // Calcula el saldo total por criptomoneda
       this.transactions.forEach(({ cripto_code, crypto_amount, action }) => {
         const amount = parseFloat(crypto_amount);
         if (!saldos[cripto_code]) saldos[cripto_code] = 0;
@@ -84,31 +96,29 @@ export default {
       });
 
       try {
-        // Promesas para obtener el precio de cada moneda
+        // Obtiene el precio de cada criptomoneda
         const cryptoPromises = Object.keys(saldos).map(async (cripto_code) => {
           if (saldos[cripto_code] <= 0) return null; // Ignorar si no hay saldo positivo
 
-          // Usamos Binance porque necesitamos obtener datos más específicos por moneda,
-          // incluyendo detalles como precios bid y ask, y el volumen del mercado.
+          // API de Binance para obtener el precio actual
           const response = await axios.get(
             `https://criptoya.com/api/binance/${cripto_code}`
           );
-          // Extrae el precio bid (precio de compra)
           const currentPrice = response.data?.bid || 0;
 
           return {
             cripto_code,
-            total_amount: saldos[cripto_code], //Cantidad total
+            total_amount: saldos[cripto_code],
             total_value: parseFloat(
-              (saldos[cripto_code] * currentPrice).toFixed(2) //Valor total en ARS
+              (saldos[cripto_code] * currentPrice).toFixed(2)
             ),
           };
         });
 
-        // Procesar las promesas
+        // Procesar todas las promesas
         const resultados = await Promise.all(cryptoPromises);
 
-        // Filtrar monedas válidas(elimina las sin saldo) y calcular el total
+        // Filtrar criptos sin saldo y calcular el total
         this.agregarCryptos = resultados.filter((crypto) => crypto !== null);
         this.valorTotal = this.agregarCryptos.reduce(
           (sum, { total_value }) => sum + total_value,
@@ -125,7 +135,6 @@ export default {
       }
     },
   },
-  //Cuando el componente se monta obtiene las transacciónes del usuario
   mounted() {
     this.obtenerTransacciones();
   },

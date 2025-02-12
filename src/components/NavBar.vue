@@ -1,6 +1,6 @@
 <template>
   <div class="navbar">
-    <!--Enlaces de navegación-->
+    <!-- Enlaces de navegación -->
     <ul class="navbar-links">
       <li>
         <RouterLink to="/dashboard" class="nav-link logo">
@@ -30,7 +30,8 @@
         </RouterLink>
       </li>
     </ul>
-    <!--Sección de autenticación(usuario y logout)-->
+
+    <!-- Sección de autenticación (usuario y logout) -->
     <div class="navbar-auth">
       <span class="username">🔑 {{ username }}</span>
       <button @click="logout" class="logout-btn">Cerrar Sesión</button>
@@ -42,17 +43,19 @@
 export default {
   data() {
     return {
-      username: "", // Almacenará el username del usuario
+      username: "Usuario", // Valor por defecto
     };
   },
   created() {
-    // Obtenemos el username de localStorage al cargar el componente
-    this.username = localStorage.getItem("username") || "Usuario";
+    // Obtener datos del usuario desde localStorage
+    const storedUser = JSON.parse(localStorage.getItem("user"));
+    if (storedUser) {
+      this.username = storedUser.username;
+    }
   },
   methods: {
-    //Cierra sesión eliminando el username de localStorage y redirige al login
+    // Cierra sesión redirigiendo al login, pero SIN eliminar los datos del usuario
     logout() {
-      localStorage.removeItem("username");
       this.$router.replace("/");
     },
   },

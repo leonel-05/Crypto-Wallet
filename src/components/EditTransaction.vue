@@ -1,12 +1,10 @@
 <template>
   <div class="edit-transaction">
     <h2>Editar Transacción</h2>
-    <!--Mensaje de espera mientras cargan los datos-->
     <div v-if="isLoading" class="loading-spinner">Cargando...</div>
-    <!--Formulario para editar la transacción-->
+
     <form @submit.prevent="actualizarTransaccion" class="form">
       <div class="form-group">
-        <!--Selecciónamos la cripto-->
         <label for="crypto_code">Criptomoneda:</label>
         <select v-model="transaction.cripto_code" id="crypto_code" required>
           <option value="btc">Bitcoin</option>
@@ -16,7 +14,6 @@
       </div>
 
       <div class="form-group">
-        <!--Edita la cantidad-->
         <label for="crypto_amount">Cantidad</label>
         <input
           type="number"
@@ -28,7 +25,6 @@
       </div>
 
       <div class="form-group">
-        <!--Selecciónamos la acción-->
         <label for="action">Acción</label>
         <select v-model="transaction.action" id="action" required>
           <option value="purchase">Comprar</option>
@@ -37,7 +33,6 @@
       </div>
 
       <div class="form-group">
-        <!--Muestra el valor calculado en ARS-->
         <label>Dinero Calculado:</label>
         <p class="calculated-money">{{ transaction.money || "0" }} ARS</p>
       </div>
@@ -57,17 +52,18 @@
 <script>
 import axios from "axios";
 
-// Configuración del cliente de API para acceder a la base de datos
+// Configuración del cliente API
 const apiClient = axios.create({
   baseURL: "https://laboratorio-ab82.restdb.io/rest",
   headers: { "x-apikey": "650b525568885487530c00bb" },
 });
 
 export default {
-  name: "EditarTransaccion",
-  props: ["id"], //Obtiene el ID de la transacción desde la ruta
+  name: "EditTransaction",
+  props: ["id"], // Obtiene el ID de la transacción desde la ruta
   data() {
     return {
+      user: null, // Almacenará los datos del usuario
       transaction: {
         user_id: "",
         action: "purchase",
@@ -80,22 +76,36 @@ export default {
     };
   },
   methods: {
-    //Obntenemos la transacción por su ID
-    async obtenerTransacciones() {
+    // Obtiene el usuario desde localStorage
+    obtenerUsuario() {
+      const storedUser = localStorage.getItem("user");
+      this.user = storedUser ? JSON.parse(storedUser) : { username: "Usuario" };
+    },
+
+    // Obtiene la transacción desde la API
+    async obtenerTransaccion() {
+      this.obtenerUsuario(); // Asegura que `user` esté disponible antes de asignar datos
       try {
         const response = await apiClient.get(`/transactions/${this.id}`);
         this.transaction = response.data;
+
+        // Asegura que el `user_id` coincida con el usuario autenticado
+        if (this.transaction.user_id !== this.user.username) {
+          alert("No tienes permiso para editar esta transacción.");
+          this.$router.push("/history");
+        }
       } catch (error) {
         alert("Error al obtener la transacción.");
       }
     },
+
+    // Calcula el valor de la transacción en ARS usando la API de precios
     async actualizarMonto() {
-      //Calcula el valor de la transacción en ARS usando SATOSHITANGO
       try {
         const response = await axios.get(
           `https://criptoya.com/api/satoshitango/${this.transaction.cripto_code}/ars`
         );
-        //Obtiene el precio actual en ARS
+
         const currentPrice = response.data.ask;
         this.transaction.money = parseFloat(
           (this.transaction.crypto_amount * currentPrice).toFixed(2)
@@ -104,10 +114,11 @@ export default {
         alert("Error al obtener el valor de la Criptomoneda.");
       }
     },
-    //actualiza la transacción en la base de datos
+
+    // Actualiza la transacción en la base de datos
     async actualizarTransaccion() {
       this.isLoading = true;
-      //Validaciones generales
+
       if (
         !this.transaction.cripto_code ||
         !this.transaction.crypto_amount ||
@@ -125,7 +136,6 @@ export default {
       }
 
       try {
-        //Datos que se actualizarán
         const { action, cripto_code, crypto_amount, money } = this.transaction;
         const updatedTransaction = {
           action,
@@ -134,7 +144,6 @@ export default {
           money,
         };
 
-        //Enviar los datos actualizados a la API
         await apiClient.patch(`/transactions/${this.id}`, updatedTransaction);
         alert("Transacción actualizada con éxito.");
         this.$router.push("/history");
@@ -144,12 +153,13 @@ export default {
         this.isLoading = false;
       }
     },
+
     cancelarEdit() {
       this.$router.push("/history");
     },
   },
   mounted() {
-    this.obtenerTransacciones();
+    this.obtenerTransaccion();
   },
 };
 </script>

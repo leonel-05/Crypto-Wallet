@@ -21,14 +21,12 @@
         </p>
       </form>
 
-      <!--Enlace a la vista de registro-->
       <p class="register-link">
         ¿No tienes cuenta?
         <RouterLink to="/register">Regístrate aquí</RouterLink>
       </p>
     </div>
 
-    <!--Sección del grafico con los precios en tiempo real-->
     <div class="crypto-chart">
       <h2>Precios en tiempo real</h2>
       <p v-if="loading" class="loading-message">Cargando precios...</p>
@@ -50,7 +48,7 @@ import {
   Legend,
 } from "chart.js";
 
-//Registro de los modulos necesarios de Chart.js
+// Registro de módulos de Chart.js
 Chart.register(
   LineController,
   LineElement,
@@ -67,54 +65,51 @@ export default {
     return {
       username: "",
       errorMessage: "",
-      chart: null, //Referencia al grafico
-      intervalId: null, //Intervalo para actualizar los precios cada 2 min
-      cryptoPrices: [], //Datos de los precios de las cripto
-      loading: true, //Estado de carga del grafico
+      chart: null,
+      intervalId: null,
+      cryptoPrices: [],
+      loading: true,
     };
   },
   methods: {
-    //Metodo para iniciar sesión
     login() {
-      if (this.username.trim() === "") {
-        this.errorMessage = "El ID no puede estar vacío.";
-        return;
-      }
+      if (!this.validarUsuario()) return;
 
-      if (this.username.length < 3 || this.username.length > 15) {
-        this.errorMessage = "El ID debe tener entre 3 y 15 caracteres.";
-        return;
-      }
-
-      const regex = /^(?=.*[a-zA-Z])(?=.*?\d)[a-zA-Z0-9]+$/;
-      if (!regex.test(this.username)) {
-        this.errorMessage =
-          "El ID debe contener al menos una letra y un número.";
-        return;
-      }
-
-      // Obtener los datos del usuario registrado en localStorage
+      // Recuperar datos de usuario desde localStorage
       const storedUser = JSON.parse(localStorage.getItem("user"));
 
-      //Valida si el usuario está registrado
       if (!storedUser || storedUser.username !== this.username) {
         this.errorMessage =
           "El usuario no está registrado. Regístrate primero.";
-        setTimeout(() => {
-          this.$router.push("/register");
-        }, 2000);
+        setTimeout(() => this.$router.push("/register"), 2000);
         return;
       }
 
-      // Guardar el username en localStorage para la sesión activa
       localStorage.setItem("username", storedUser.username);
       this.$router.replace("/dashboard");
     },
-    //Obtenemos con el metodo el precio de las Cripto
-    async fetchCryptoPrices() {
-      if (!this.loading) return; // Evita múltiples llamadas si ya está cargando
 
+    validarUsuario() {
+      if (this.username.trim() === "") {
+        this.errorMessage = "El ID no puede estar vacío.";
+        return false;
+      }
+      if (this.username.length < 3 || this.username.length > 15) {
+        this.errorMessage = "El ID debe tener entre 3 y 15 caracteres.";
+        return false;
+      }
+      if (!/^(?=.*[a-zA-Z])(?=.*?\d)[a-zA-Z0-9]+$/.test(this.username)) {
+        this.errorMessage =
+          "El ID debe contener al menos una letra y un número.";
+        return false;
+      }
+      return true;
+    },
+
+    async fetchCryptoPrices() {
+      if (!this.loading) return;
       this.loading = true;
+
       try {
         const cryptos = ["BTCUSDT", "ETHUSDT", "LTCUSDT"];
         const requests = cryptos.map((crypto) =>
@@ -125,10 +120,9 @@ export default {
         const responses = await Promise.all(requests);
 
         if (!responses || responses.length === 0) {
-          throw new Error("La API de Binance no devolvió datos.");
+          throw new Error("No se recibieron datos de Binance.");
         }
 
-        //Procesamos los datos obtenidos
         this.cryptoPrices = responses.map((data) => ({
           name: data.symbol.replace("USDT", ""),
           price: parseFloat(data.lastPrice),
@@ -142,7 +136,6 @@ export default {
       }
     },
 
-    //Metodo para renderizar el grafico
     renderChart() {
       const ctx = document.getElementById("priceChart").getContext("2d");
 
@@ -179,7 +172,6 @@ export default {
       });
     },
 
-    //Metodo para actulizar los datos del grafico
     updateChart() {
       if (this.chart) {
         this.chart.data.labels = this.cryptoPrices.map((crypto) => crypto.name);
@@ -193,14 +185,11 @@ export default {
     },
   },
 
-  //Hook que se ejecuta cuando el componente es montado
   mounted() {
     this.fetchCryptoPrices();
-    //Intervalo para actualizar los precios 2 min
     this.intervalId = setInterval(this.fetchCryptoPrices, 120000);
   },
 
-  //Hook que se ejecuta antes de desmontar el componente
   beforeUnmount() {
     clearInterval(this.intervalId);
     if (this.chart) {
