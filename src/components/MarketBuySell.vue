@@ -110,6 +110,7 @@ export default {
         money: "",
         datetime: "",
       },
+      saldoCriptos: {}, // Almacena el saldo disponible por criptomoneda
       precioActual: 0,
       message: "",
     };
@@ -117,16 +118,45 @@ export default {
   mounted() {
     this.obtenerUsuario();
     this.inicializarCriptoDesdeRuta();
+    this.obtenerSaldoDisponible();
   },
   methods: {
     // Obtiene el usuario desde localStorage
     obtenerUsuario() {
       const storedUser = localStorage.getItem("user");
       this.user = storedUser ? JSON.parse(storedUser) : { username: "Usuario" };
-      this.transaction.user_id = this.user.username; // Asignamos el username del usuario
+      this.transaction.user_id = this.user.username;
     },
 
-    // Establece el tipo de transacción (compra o venta)
+    // Obtiene el saldo disponible de criptomonedas del usuario
+    async obtenerSaldoDisponible() {
+      try {
+        const apiClient = axios.create({
+          baseURL: "https://laboratorio-ab82.restdb.io/rest",
+          headers: { "x-apikey": "650b525568885487530c00bb" },
+        });
+
+        const response = await apiClient.get(
+          `/transactions?q={"user_id": "${this.user.username}"}`
+        );
+
+        // Calculamos el saldo disponible de cada criptomoneda
+        const saldo = {};
+        response.data.forEach(({ cripto_code, crypto_amount, action }) => {
+          if (!saldo[cripto_code]) saldo[cripto_code] = 0;
+          saldo[cripto_code] +=
+            action === "purchase"
+              ? parseFloat(crypto_amount)
+              : -parseFloat(crypto_amount);
+        });
+
+        this.saldoCriptos = saldo;
+      } catch (error) {
+        console.error("Error al obtener saldo disponible:", error);
+      }
+    },
+
+    // Establece el tipo de transacción
     establecerTipoTransaccion(tipo) {
       this.transaction.action = tipo;
     },
@@ -147,8 +177,7 @@ export default {
           `https://criptoya.com/api/satoshitango/${this.transaction.cripto_code}/ars`
         );
 
-        const priceData = response.data;
-        this.precioActual = priceData.totalBid || priceData.ask || 0;
+        this.precioActual = response.data.totalBid || response.data.ask || 0;
         this.actualizarMonto();
       } catch (error) {
         this.message =
@@ -165,32 +194,46 @@ export default {
           : 0;
     },
 
-    // Registra la transacción en la base de datos
+    // Verifica si el usuario tiene saldo suficiente antes de vender
+    validarVenta() {
+      const { cripto_code, crypto_amount } = this.transaction;
+      const saldoDisponible = this.saldoCriptos[cripto_code] || 0;
+
+      if (
+        this.transaction.action === "sale" &&
+        parseFloat(crypto_amount) > saldoDisponible
+      ) {
+        alert("No tienes suficiente saldo para vender esta cantidad.");
+        return false;
+      }
+      return true;
+    },
+
+    // Registra la transacción
     async enviarTransaccion() {
+      if (!this.validarVenta()) return;
+
       const { cripto_code, crypto_amount, money, datetime } = this.transaction;
 
       if (
         !cripto_code ||
         parseFloat(crypto_amount) <= 0 ||
         !money ||
-        parseFloat(money) <= 0 ||
         !datetime
       ) {
         this.message = "Por favor, completa todos los campos correctamente.";
         return;
       }
 
-      this.transaction.datetime = new Date(
-        this.transaction.datetime
-      ).toISOString();
+      this.transaction.datetime = new Date(datetime).toISOString();
 
       try {
-        const clienteApi = axios.create({
+        const apiClient = axios.create({
           baseURL: "https://laboratorio-ab82.restdb.io/rest",
           headers: { "x-apikey": "650b525568885487530c00bb" },
         });
 
-        await clienteApi.post("/transactions", this.transaction);
+        await apiClient.post("/transactions", this.transaction);
         this.message = "Transacción guardada exitosamente";
 
         setTimeout(() => {
@@ -215,13 +258,6 @@ export default {
         ltc: "https://cryptologos.cc/logos/litecoin-ltc-logo.png",
       };
       return logos[criptoCode] || "";
-    },
-
-    resetearFormulario() {
-      this.transaction.crypto_amount = "";
-      this.transaction.money = "";
-      this.transaction.datetime = "";
-      this.message = "";
     },
   },
 };
